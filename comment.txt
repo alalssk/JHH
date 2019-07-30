@@ -1,0 +1,5 @@
+07/30
+
+* Login Server : 굳이 비동기read write 릏 할 필요가 있는지 생각해보자.
+- 로그인 처리만 하면 되기 떄문에 Task await 를 사용한 비동기 accept 이후 blockingcollection 을 이용한 LoginDB, 세션키생성 등 처리를 한다.
+
