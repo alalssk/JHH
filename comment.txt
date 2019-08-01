@@ -3,3 +3,5 @@
 * Login Server : 굳이 비동기read write 릏 할 필요가 있는지 생각해보자.
 - 로그인 처리만 하면 되기 떄문에 Task await 를 사용한 비동기 accept 이후 blockingcollection 을 이용한 LoginDB, 세션키생성 등 처리를 한다.
 
+- 직렬화같은경우 다른 두개의 머신이 각각 프로젝트폴더에 class를 갖고있으면 받는쪽에서 Deserialize할때 에러남.
+- JHHCorelib 프로젝트의 경우 라이브러리 목적의 프로젝트기 때문에 프로그램 시작점(main())이 없다 따라서 프로젝트 옵션에서 출력형식을 클래스라이브러리로 바꿔줘야한다.
