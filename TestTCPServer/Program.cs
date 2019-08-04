@@ -34,11 +34,13 @@ namespace TestTCPServer
                 //     서버에서 새 TcpClient 객체를 생성하여 리턴
                 //listener.AcceptTcpClientAsync();
                 TcpClient tc = listener.AcceptTcpClient(); //Socket clientSock = tc.Client;
+                listener.AcceptTcpClientAsync();
 
                 Console.WriteLine("Connect client: {0} ", tc.Client.Handle);
 
                 // (3) TcpClient 객체에서 NetworkStream을 얻어옴 
                 NetworkStream stream = tc.GetStream();
+                stream.ReadAsync().ContinueWith;
                 //BinaryFormatter fom = new BinaryFormatter();
                 TestPacket t = new TestPacket();
                 t.name = "21234";

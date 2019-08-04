@@ -4,14 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ServerCommon.DB
+namespace JHHCorelib
 {
-    public class LoginDB
+    public class Request_Login : PACKET_HADER
     {
-        public long user_idx;
         public string user_id;
         public string user_pass;
-        public DateTime lastLoginDate;
-
     }
 }

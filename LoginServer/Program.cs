@@ -12,6 +12,10 @@ namespace LoginServer
     {
         static void Main(string[] args)
         {
+            LoginServerManager server = new LoginServerManager();
+            server.Init();
+
+            server.Run();
 
         }
     }

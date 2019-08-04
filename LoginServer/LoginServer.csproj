@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LoginServer.cs" />
+    <Compile Include="LoginServerManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -58,6 +59,10 @@
     <ProjectReference Include="..\JHH\JHH.csproj">
       <Project>{92ada213-1dac-4156-8b75-a3bff5fea09c}</Project>
       <Name>JHH</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ServerCommon\ServerCommon.csproj">
+      <Project>{114b4b3c-4c84-4660-9af6-eba3340fc440}</Project>
+      <Name>ServerCommon</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

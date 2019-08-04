@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace JHHCorelib
 {
     [Serializable]
-    public class TestPacket
+    public class TestPacket: PACKET_HADER
     {
         public string name { get; set; }
         public int num { get; set; }
