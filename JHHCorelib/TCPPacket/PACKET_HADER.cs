@@ -12,17 +12,24 @@ namespace JHHCorelib
         REQ_Login,
         RES_Login,
 
+        //*****특수패킷
+        REQ_Login_CreateUser = 10000,
+
     }
     public enum EAnswerType
     {
         None = -1,
         Fail_DBConnection,
+        Fail_InvailedPacket,
         Success,
         Fail_Invailed_Password,
         Fail_NotFound_User,
     }
+
+    [Serializable]
     public class PACKET_HADER
     {
-        public EPacketType type;
+        public EPacketType PacketType;
+        public EAnswerType AnswerType = EAnswerType.None;
     }
 }

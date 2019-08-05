@@ -50,7 +50,7 @@ namespace ServerCommon
                 try
                 {
                     db.Open();
-                    var result = db.Query<UserLogin>($"SELECT * from login_user_info where platform_user_id = {_id};");
+                    var result = db.Query<UserLogin>($"SELECT * from login_user_info where platform_user_id = '{_id}';");
 
                     if (0 == result.Count()) return EAnswerType.Fail_NotFound_User;
 

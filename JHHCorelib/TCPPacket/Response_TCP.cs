@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace JHHCorelib
 {
-    public class Response_Login
+    [Serializable]
+    public class RES_Login : PACKET_HADER
     {
+        public int UserIdx;
+        public string UserName;
+        public string SessionKey;
     }
 }

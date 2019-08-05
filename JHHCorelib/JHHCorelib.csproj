@@ -53,8 +53,8 @@
     <Compile Include="TCPCore\SingleT.cs" />
     <Compile Include="TCPCore\SocketAsyncEventArgsPool.cs" />
     <Compile Include="TCPPacket\PACKET_HADER.cs" />
-    <Compile Include="TCPPacket\Request_Login.cs" />
-    <Compile Include="TCPPacket\Response_Login.cs" />
+    <Compile Include="TCPPacket\Request_TCP.cs" />
+    <Compile Include="TCPPacket\Response_TCP.cs" />
     <Compile Include="TCPPacket\TestPacket.cs" />
   </ItemGroup>
   <ItemGroup>

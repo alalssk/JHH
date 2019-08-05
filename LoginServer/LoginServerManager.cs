@@ -46,37 +46,58 @@ namespace LoginServer
         }
         public void Accept()
         {
-            byte[] buff = new byte[1024];
-
             while(true)
             {
                 TcpClient tc = m_listener.AcceptTcpClient();
-                
-                tc.GetStream().ReadAsync(buff,0, buff.Length).ContinueWith(_ => 
-                {
-                    Console.WriteLine("Recive Client handle: {0}", tc.Client.Handle);
-                    
-                    var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
-                    if (EPacketType.REQ_Login == obj.type)
-                    {
-                        Request_Login packet = obj as Request_Login;
-                        UserLogin userinfo = null;
-                        switch (DBHelper.UserLoginChecker(packet.user_id, packet.user_pass, out userinfo))
-                        {
-                            case EAnswerType.Fail_Invailed_Password:
-                                break;
-                            case EAnswerType.Fail_NotFound_User:
-                                break;
-                            case EAnswerType.Success:
+                //이런식으로 해도되는지...? 테스트해보자
+                //클라 두개만 켜두고 테스트는 완료함.
+                SetReceiveAsync(tc);
 
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                });
             }
         }
-        
+        private void SetReceiveAsync(TcpClient _client)
+        {
+            byte[] buff = new byte[1024];
+            _client.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ =>
+            {
+                Console.WriteLine("Recive Client handle: {0}", _client.Client.Handle);
+
+                var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
+                RES_Login res = new RES_Login();
+                if (EPacketType.REQ_Login == obj.PacketType)
+                {
+                    REQ_Login req = obj as REQ_Login;
+                    UserLogin userinfo = null;
+                    res.AnswerType = DBHelper.UserLoginChecker(req.user_id, req.user_pass, out userinfo);
+                    switch (res.AnswerType)
+                    {
+                        case EAnswerType.Fail_Invailed_Password:
+                            break;
+                        case EAnswerType.Fail_NotFound_User:
+                            break;
+                        case EAnswerType.Success:
+                            res.UserIdx = userinfo.user_idx;
+                            res.UserName = userinfo.user_id;
+                            res.SessionKey = "일단아무거나만들기";
+                            //이거 보내고 세션끊기.
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    res.AnswerType = EAnswerType.Fail_InvailedPacket;
+                }
+                byte[] resBuff = JHHServerApi.Serialize<RES_Login>(res);
+                Console.WriteLine("BUFF: {0}", resBuff);
+                _client.Client.Send(resBuff);
+                Console.WriteLine("응답패킷 전송 완료 ==> {0}", _client.Client.Handle);
+
+                if (res.AnswerType != EAnswerType.Success)
+                    SetReceiveAsync(_client);
+                
+            });
+        }        
     }
 }
