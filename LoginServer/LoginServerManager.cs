@@ -37,18 +37,43 @@ namespace LoginServer
         }
         public void Run()//얘를 main함수에서 ThreadPool로 실행시키면....?
         {
-            m_acceptThread = new Thread(Accept);
-            m_acceptThread.Start();
+            //m_acceptThread = new Thread(Accept);
+            ThreadPool.QueueUserWorkItem(Accept);
+            ThreadPool.QueueUserWorkItem(Regulator);
+            //m_acceptThread.Start();
             Console.WriteLine("Accpet Start...");
 
-            m_acceptThread.Join();
+            bool isExit = false;
+            while(!isExit)
+            {
+                Console.WriteLine("input key...");
+                Console.WriteLine("1. view user");
+                Console.WriteLine("2. Exit Server");
+
+                string key = Console.ReadLine();
+                if (key == "1")
+                {
+                    foreach (var info in m_DicClient)
+                    {
+                        Console.WriteLine("Key:{0}, ClientHandle:{1}", info.Key, info.Value.Client.Handle);
+                    }
+                    Console.WriteLine("UserCount: [{0}]", m_DicClient.Count);
+                }
+                else if (key == "2")
+                {
+                    isExit = true;
+                }
+                else continue;
+            }
+            //m_acceptThread.Join();
 
         }
-        public void Accept()
+        public void Accept(object _state)
         {
             while(true)
             {
                 TcpClient tc = m_listener.AcceptTcpClient();
+                AddUser(tc);
                 //이런식으로 해도되는지...? 테스트해보자
                 //클라 두개만 켜두고 테스트는 완료함.
                 SetReceiveAsync(tc);
@@ -96,8 +121,62 @@ namespace LoginServer
 
                 if (res.AnswerType != EAnswerType.Success)
                     SetReceiveAsync(_client);
+
+                DeleteUser(_client);
                 
             });
-        }        
+        }
+        private void AddUser(TcpClient _tc)
+        {
+            while (true)
+            {
+                if (false == m_DicClient.TryAdd(_tc.Client.Handle, _tc))
+                {
+                    Thread.Sleep(10);
+                    continue;
+                }
+                break;
+            }
+        }
+        private void DeleteUser(TcpClient _tc)
+        {
+            TcpClient removeTc = null;
+           
+            while (true)
+            {
+                if (false == m_DicClient.TryRemove(_tc.Client.Handle, out removeTc))
+                {
+                    Thread.Sleep(10);
+                    continue;
+                }
+                break;
+            }
+            Console.WriteLine("Delete complete");
+        }
+        /// <summary>
+        /// m_DicClient를 관리하는 워커스레드.
+        /// m_DicClient에서 연결이 끊긴 TC를 찾아 제거.
+        /// 
+        /// </summary>
+        private void Regulator(object _state)
+        {
+            //_tc.Connected
+            while(true)
+            {
+                if(m_DicClient.Count > 100)
+                {
+                    foreach (var info in m_DicClient)
+                    {
+                        if (false == info.Value.Connected)
+                        {
+                            DeleteUser(info.Value);
+                        }
+                    }
+                }
+                Thread.Sleep(5000);
+                Console.WriteLine("Regulator...");
+            }
+        }
     }
+
 }
