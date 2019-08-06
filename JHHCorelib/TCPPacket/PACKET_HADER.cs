@@ -21,9 +21,11 @@ namespace JHHCorelib
         None = -1,
         Fail_DBConnection,
         Fail_InvailedPacket,
+        Fail_AlreadyHasSessionInfo,
         Success,
         Fail_Invailed_Password,
         Fail_NotFound_User,
+
     }
 
     [Serializable]

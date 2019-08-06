@@ -85,7 +85,7 @@ namespace LoginServer
             byte[] buff = new byte[1024];
             _client.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ =>
             {
-                Console.WriteLine("Recive Client handle: {0}", _client.Client.Handle);
+                Console.WriteLine("Recive Client handle: {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
 
                 var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
                 RES_Login res = new RES_Login();
@@ -102,7 +102,7 @@ namespace LoginServer
                             break;
                         case EAnswerType.Success:
                             res.UserIdx = userinfo.user_idx;
-                            res.UserName = userinfo.user_id;
+                            res.UserName = userinfo.platform_user_id;
                             res.SessionKey = "일단아무거나만들기";
                             //이거 보내고 세션끊기.
                             break;
@@ -117,7 +117,7 @@ namespace LoginServer
                 byte[] resBuff = JHHServerApi.Serialize<RES_Login>(res);
                 Console.WriteLine("BUFF: {0}", resBuff);
                 _client.Client.Send(resBuff);
-                Console.WriteLine("응답패킷 전송 완료 ==> {0}", _client.Client.Handle);
+                Console.WriteLine("응답패킷 전송 완료 ==> {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
 
                 if (res.AnswerType != EAnswerType.Success)
                     SetReceiveAsync(_client);

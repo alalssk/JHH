@@ -13,6 +13,8 @@ namespace LoginServer
         static void Main(string[] args)
         {
             LoginServerManager server = new LoginServerManager();
+            //멀로해야되는거지?
+            //LoginServerManager.SIG.Init();
             server.Init();
 
             server.Run();

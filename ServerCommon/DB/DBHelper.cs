@@ -45,6 +45,9 @@ namespace ServerCommon
         public static EAnswerType UserLoginChecker(string _id, string _pass, out UserLogin _refUserLoginInfo)
         {
             _refUserLoginInfo = null;
+            //db접속하기 전에 이미 로그인 한 계정인지 체크. => Redis 세션키 이용
+            //Fail_AlreadyHasSessionInfo
+
             using (IDbConnection db = new MySqlConnection("database=dapper_test;port=3306;user id=devil_user;password=devil12345;server=localhost;"))
             {
                 try
@@ -52,13 +55,16 @@ namespace ServerCommon
                     db.Open();
                     var result = db.Query<UserLogin>($"SELECT * from login_user_info where platform_user_id = '{_id}';");
 
-                    if (0 == result.Count()) return EAnswerType.Fail_NotFound_User;
+                    if (0 == result.Count())
+                        return EAnswerType.Fail_NotFound_User;
 
-                    UserLogin userinfo = result as UserLogin;
+                    UserLogin userinfo = result.First<UserLogin>();
 
-                    if (userinfo.user_pass != _pass) return EAnswerType.Fail_Invailed_Password;
+                    if (userinfo.password != _pass)
+                        return EAnswerType.Fail_Invailed_Password;
 
                     _refUserLoginInfo = userinfo;
+
                     return EAnswerType.Success;
                 }
                 catch (Exception e)
