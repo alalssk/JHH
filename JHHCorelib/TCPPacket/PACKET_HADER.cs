@@ -20,6 +20,7 @@ namespace JHHCorelib
     {
         None = -1,
         Fail_DBConnection,
+        Fail_CreateUser,
         Fail_InvailedPacket,
         Fail_AlreadyHasSessionInfo,
         Success,

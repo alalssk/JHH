@@ -73,5 +73,22 @@ namespace ServerCommon
                 }
             }
         }
+        //return value 가 UserIdx가 되야할듯.
+        public static int CreateUser(UserLogin _userInfo)
+        {
+            using (IDbConnection db = new MySqlConnection("database=dapper_test;port=3306;user id=devil_user;password=devil12345;server=localhost;"))
+            {
+                try
+                {
+                    db.Open();
+                    //DB ORM 시스템 구현해서 하자 일단 임시로 쿼리입력함.
+                    return db.ExecuteScalar<int>(_userInfo.m_UserInsertQuery, _userInfo);
+                }
+                catch (Exception e)
+                {
+                    return -1;
+                }
+            }
+        }
     }
 }

@@ -24,6 +24,10 @@ namespace LoginServer
         ConcurrentDictionary<IntPtr, TcpClient> m_DicClient = new ConcurrentDictionary<IntPtr, TcpClient>();
         Thread m_acceptThread;
 
+        //
+        delegate RES_Login LoginProc(REQ_Login _req);
+        Dictionary<EPacketType, LoginProc> m_LoginPro = new Dictionary<EPacketType, LoginProc>();
+
         public LoginServerManager()
         {
             //m_listener = new TcpListener(IPAddress.Any, 7000);
@@ -31,10 +35,74 @@ namespace LoginServer
         public void Init()
         {
             DBHelper.IsConnectCheck(EDBType.Login, add);
+            UserRedis.SIG.init();
+            m_LoginPro.Add(EPacketType.REQ_Login, UserLogin);
+            m_LoginPro.Add(EPacketType.REQ_Login_CreateUser, CreateUser);
+
             m_loginDB = new LoginDB();
             m_listener = new TcpListener(IPAddress.Any, 7000);
             m_listener.Start();
+
+            
         }
+        #region[Login 델리게이트]
+        public RES_Login UserLogin(REQ_Login _req)
+        {
+            RES_Login res = new RES_Login();
+            UserLogin userinfo = null;
+            res.AnswerType = DBHelper.UserLoginChecker(_req.user_id, _req.user_pass, out userinfo);
+            switch (res.AnswerType)
+            {
+                case EAnswerType.Fail_Invailed_Password:
+                    break;
+                case EAnswerType.Fail_NotFound_User:
+                    break;
+                case EAnswerType.Success:
+                    res.UserIdx = userinfo.user_idx;
+                    res.UserName = userinfo.platform_user_id;
+                    res.SessionKey = $"user:{userinfo.user_idx}-{DateTime.Now}";
+
+                    if (false == UserRedis.SIG.SetUserSession(userinfo.user_idx, res.SessionKey))
+                    {
+                        UserRedis.SIG.SetUserSession(userinfo.user_idx, res.SessionKey, StackExchange.Redis.When.Always);
+                        //S2S_UserInit(userinfo.user_idx); 다른서버에 유저초기화
+
+                    }
+                    //이거 보내고 소캣연결 끊기.
+                    break;
+                default:
+                    break;
+            }
+            return res;
+        }
+        public RES_Login CreateUser(REQ_Login _req)
+        {
+            
+            UserLogin CreateUserInfo = new UserLogin(_req.user_id, _req.user_pass, DateTime.Now);
+
+            RES_Login res = new RES_Login();
+            res.UserIdx = DBHelper.CreateUser(CreateUserInfo);
+            res.UserName = _req.user_id;
+            res.SessionKey = $"user:{res.UserIdx}-{DateTime.Now}";
+            
+            if(res.UserIdx > 0)
+            {
+                //여기서 세션키를 만들라면 Useridx가 필요한데
+                //userIdx는 테이블에 AUTO INCREMENT 설정이 되어있기 떄문에. Insert 하면서 userIdx값을 받아오는 함수를 이용해야한다.
+                //--> SELECT LAST_INSERT_ID(); 와  ExcuteSacla<int> 를 이용하자
+                //어짜피 ORM 트랜잭션 시스템을 만들어야되서 대충만들어 놓기.
+
+                UserRedis.SIG.SetUserSession(res.UserIdx, res.SessionKey);
+                res.AnswerType = EAnswerType.Success;
+            }
+            else
+            {
+                res.AnswerType = EAnswerType.Fail_CreateUser;
+            }
+
+            return res;
+        }
+        #endregion
         public void Run()//얘를 main함수에서 ThreadPool로 실행시키면....?
         {
             //m_acceptThread = new Thread(Accept);
@@ -88,32 +156,9 @@ namespace LoginServer
                 Console.WriteLine("Recive Client handle: {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
 
                 var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
-                RES_Login res = new RES_Login();
-                if (EPacketType.REQ_Login == obj.PacketType)
-                {
-                    REQ_Login req = obj as REQ_Login;
-                    UserLogin userinfo = null;
-                    res.AnswerType = DBHelper.UserLoginChecker(req.user_id, req.user_pass, out userinfo);
-                    switch (res.AnswerType)
-                    {
-                        case EAnswerType.Fail_Invailed_Password:
-                            break;
-                        case EAnswerType.Fail_NotFound_User:
-                            break;
-                        case EAnswerType.Success:
-                            res.UserIdx = userinfo.user_idx;
-                            res.UserName = userinfo.platform_user_id;
-                            res.SessionKey = "일단아무거나만들기";
-                            //이거 보내고 세션끊기.
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                else
-                {
-                    res.AnswerType = EAnswerType.Fail_InvailedPacket;
-                }
+                REQ_Login req = obj as REQ_Login;
+                RES_Login res = m_LoginPro[obj.PacketType](req);
+
                 byte[] resBuff = JHHServerApi.Serialize<RES_Login>(res);
                 Console.WriteLine("BUFF: {0}", resBuff);
                 _client.Client.Send(resBuff);
