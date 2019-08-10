@@ -219,7 +219,7 @@ namespace LoginServer
                     }
                 }
                 Thread.Sleep(5000);
-                Console.WriteLine("Regulator...");
+                Console.WriteLine("Regulator...Thread_{0}",Thread.CurrentThread.ManagedThreadId);
             }
         }
     }
