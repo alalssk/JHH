@@ -9,3 +9,8 @@
 
 TcpListener.AcceptTcpClient()
 TcpListener.Pending()
+
+* CG 관련되서 테스트
+                Console.WriteLine("Total memory: {0:###,###,###,##0} bytes", GC.GetTotalMemory(true));
+                Console.WriteLine("Private bytes {0}", System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64);
+                Console.WriteLine("Handle count: {0}", System.Diagnostics.Process.GetCurrentProcess().HandleCount);

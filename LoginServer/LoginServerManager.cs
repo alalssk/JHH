@@ -219,7 +219,11 @@ namespace LoginServer
                     }
                 }
                 Thread.Sleep(5000);
+                Console.Clear();
                 Console.WriteLine("Regulator...Thread_{0}",Thread.CurrentThread.ManagedThreadId);
+                Console.WriteLine("Total memory: {0:###,###,###,##0} bytes", GC.GetTotalMemory(true));
+                Console.WriteLine("Private bytes {0}", System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64);
+                Console.WriteLine("Handle count: {0}", System.Diagnostics.Process.GetCurrentProcess().HandleCount);
             }
         }
     }
