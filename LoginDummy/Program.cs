@@ -125,6 +125,7 @@ namespace LoginDummy
     {
         bool AcceptRequestFlag = false;
         bool CreateSendFlag = false;
+        bool StopFlag = false;
 
         Queue<KeyValuePair<TcpClient, byte[]>> m_liClient = new Queue<KeyValuePair<TcpClient, byte[]>>();
         int Count;
@@ -139,10 +140,11 @@ namespace LoginDummy
         {
             ThreadPool.QueueUserWorkItem(AcceptRequestThread);
             ThreadPool.QueueUserWorkItem(CreateUserSendTest);
-            while(true)
+            while(!StopFlag)
             {
                 Console.WriteLine("1. acceptThread stop or start");
                 Console.WriteLine("2. SendThread stop or start");
+                Console.WriteLine("3. all stop");
                 string key = Console.ReadLine();
 
                 if (key == "1")
@@ -152,6 +154,10 @@ namespace LoginDummy
                 else if(key =="2")
                 {
                     CreateSendFlag = (CreateSendFlag == true) ? false : true;
+                }
+                else if(key == "3")
+                {
+                    StopFlag = (StopFlag == true) ? false : true;
                 }
                 else
                 {
@@ -163,8 +169,14 @@ namespace LoginDummy
         }
         public void AcceptRequestThread(object _obj)
         {
-            while(!AcceptRequestFlag)
+            while(!StopFlag)
             {
+                if( true == AcceptRequestFlag)
+                {
+                    Thread.Sleep(10);
+                    continue;
+                }
+
                 TcpClient client = new TcpClient("127.0.0.1", 7000);
                 byte[] sendbuff = new byte[1024];
                 CreateSendBuff_Dummy(EPacketType.REQ_Login_CreateUser, $"Dummy_{Count++}", out sendbuff);
@@ -182,9 +194,20 @@ namespace LoginDummy
         public void CreateUserSendTest(object _obj)
         {
             byte[] buff = new byte[1024];
-            while (!CreateSendFlag)
+            while (!StopFlag)
             {
-                if (!(m_liClient.Count > 0)) { Thread.Sleep(10); continue; }
+                if (true == CreateSendFlag)
+                {
+                    Thread.Sleep(10);
+                    continue;
+                }
+
+                if (!(m_liClient.Count > 0))
+                {
+                    Thread.Sleep(10);
+                    continue;
+                }
+
                 KeyValuePair<TcpClient, byte[]> info;
 
                 lock (m_lock)
