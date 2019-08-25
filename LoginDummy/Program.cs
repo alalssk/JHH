@@ -1,8 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Sockets;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using JHHCorelib;
+using JHHCorelib.API;
+using ServerCommon;
 
 namespace LoginDummy
 {
@@ -113,47 +120,117 @@ namespace LoginDummy
         }
 
     }
-    class Program
+
+    public class DummyClient
     {
-        public const int MaxX = 50;
-        public const int MaxY = 50;
-        static void Main(string[] args)
+        bool AcceptRequestFlag = false;
+        bool CreateSendFlag = false;
+
+        Queue<KeyValuePair<TcpClient, byte[]>> m_liClient = new Queue<KeyValuePair<TcpClient, byte[]>>();
+        int Count;
+        object m_lock = new object();
+
+        public void Init()
         {
-            //GlobalObject[,] map = new GlobalObject[MaxX, MaxY];
-
-            //for (int i = 0; i < MaxY; i++)
-            //{
-            //    for (int j = 0; j < MaxY; j++)
-            //    {
-            //        map[i, j] = new GlobalObject(i,j);
-            //    }
-            //}
-            Map map1 = new Map(50, 50);
-
-            User NewUser = new GlobalObject(3, 4) as User;
-            NewUser.UserIdx = 1010;
-            NewUser.UserName = "alalssk";
-
-            map1.SetObject(NewUser, 3, 4);
-
-            for (int i = 0; i < MaxY; i++)
+            Log.init("Client-Local");
+            Count = 0;
+        }
+        public void Run()
+        {
+            ThreadPool.QueueUserWorkItem(AcceptRequestThread);
+            ThreadPool.QueueUserWorkItem(CreateUserSendTest);
+            while(true)
             {
-                for (int j = 0; j < MaxY; j++)
+                Console.WriteLine("1. acceptThread stop or start");
+                Console.WriteLine("2. SendThread stop or start");
+                string key = Console.ReadLine();
+
+                if (key == "1")
                 {
-                    Console.Write("{0} ", map[i, j].name);
-                    //Console.WriteLine("name:{0}, x:{1}, y:{2}", m[i, j].name, m[i, j].x, m[i, j].y);
+                    AcceptRequestFlag = (AcceptRequestFlag == true) ? false : true;
                 }
-                Console.WriteLine();
+                else if(key =="2")
+                {
+                    CreateSendFlag = (CreateSendFlag == true) ? false : true;
+                }
+                else
+                {
+                    continue;
+                }
 
             }
 
-            //GlobalObject user = new GlobalObject(3, 4);
-            //user.name = "y";
+        }
+        public void AcceptRequestThread(object _obj)
+        {
+            while(!AcceptRequestFlag)
+            {
+                TcpClient client = new TcpClient("127.0.0.1", 7000);
+                byte[] sendbuff = new byte[1024];
+                CreateSendBuff_Dummy(EPacketType.REQ_Login_CreateUser, $"Dummy_{Count++}", out sendbuff);
 
-            //map[user.x, user.y] = user;
+                KeyValuePair<TcpClient, byte[]> data =
+                    new KeyValuePair<TcpClient, byte[]>(client, sendbuff);
 
+                lock (m_lock)
+                {
+                    m_liClient.Enqueue(data);
+                }
+                Thread.Sleep(1);
+            }
+        }
+        public void CreateUserSendTest(object _obj)
+        {
+            byte[] buff = new byte[1024];
+            while (!CreateSendFlag)
+            {
+                if (!(m_liClient.Count > 0)) { Thread.Sleep(10); continue; }
+                KeyValuePair<TcpClient, byte[]> info;
 
+                lock (m_lock)
+                {
+                    info = m_liClient.Dequeue();
+                }
 
+                info.Key.Client.Send(info.Value);
+                info.Key.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ => 
+                {
+                    RES_Login res = JHHServerApi.Deserialize<RES_Login>(buff);
+                    Log.Server($"Create User Compliete UserKey: {res.SessionKey}");
+                });
+
+            }
+            
+        }
+        public void LoginTest()
+        {
+
+        }
+        public bool CreateSendBuff_Dummy(EPacketType _sendType, string _str, out byte[] _outbuff)
+        {
+            _outbuff = null;
+            REQ_Login req = new REQ_Login();
+            bool ret = false;
+
+            req.user_id = _str;
+
+            req.user_pass = "1010229";
+
+            req.PacketType = _sendType;
+            
+            _outbuff = JHHServerApi.Serialize<REQ_Login>(req);
+            Log.Server($" Dummy Accept Ready ID: {_str} SendType: {_sendType}");
+            return ret;
+        }
+    }
+    class Program
+    {
+
+        static void Main(string[] args)
+        {
+            DummyClient client = new DummyClient();
+            client.Init();
+            client.Run();
         }
     }
 }

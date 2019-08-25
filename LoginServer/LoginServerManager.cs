@@ -145,7 +145,7 @@ namespace LoginServer
             {
                 TcpClient tc = m_listener.AcceptTcpClient();
                 AddUser(tc);
-                Log.Server($"ADD Connection UserSock:{tc.Client.Handle.ToString()} Thread_{Thread.CurrentThread.ManagedThreadId}");
+                Log.Server($"ADD Connection UserSock:{tc.Client.Handle.ToString()} Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
                 //이런식으로 해도되는지...? 테스트해보자
                 //클라 두개만 켜두고 테스트는 완료함.
                 SetReceiveAsync(tc);
@@ -157,7 +157,7 @@ namespace LoginServer
             byte[] buff = new byte[1024];
             _client.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ =>
             {
-               Log.Server($"Recive Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId}");
+               Log.Server($"Recive Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
 
                 var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
                 REQ_Login req = obj as REQ_Login;
@@ -169,7 +169,7 @@ namespace LoginServer
                 Console.WriteLine("BUFF: {0}", resBuff);
                 _client.Client.Send(resBuff);
                 Console.WriteLine("응답패킷 전송 완료 ==> {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
-                Log.Server($"Send Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId}");
+                Log.Server($"Send Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
                 if (res.AnswerType != EAnswerType.Success)
                     SetReceiveAsync(_client);
 
@@ -202,7 +202,7 @@ namespace LoginServer
                 }
                 break;
             }
-            Log.Server($"Delete Connection UserSock: {_tc.Client.Handle.ToString()}, Thread_{Thread.CurrentThread.ManagedThreadId} ");
+            Log.Server($"Delete Connection UserSock: {_tc.Client.Handle.ToString()}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
         }
         /// <summary>
         /// m_DicClient를 관리하는 워커스레드.
@@ -221,7 +221,7 @@ namespace LoginServer
                         if (false == info.Value.Connected)
                         {
                             DeleteUser(info.Value);
-                            Log.Server($"Delete Connection UserSock: {info.Value.Client.Handle.ToString()}, Thread_{Thread.CurrentThread.ManagedThreadId} ");
+                            Log.Server($"Delete Connection UserSock: {info.Value.Client.Handle.ToString()}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
                         }
                     }
                 }
