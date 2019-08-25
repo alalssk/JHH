@@ -55,10 +55,10 @@ namespace TestTCPClient
         {
             List<TcpClient> liTcpClients = new List<TcpClient>();
 
-            //for (int i = 0; i < 99; i++)
-            //{
-            //    liTcpClients.Add(new TcpClient("127.0.0.1", 7000));
-            //}
+            for (int i = 0; i < 99; i++)
+            {
+                liTcpClients.Add(new TcpClient("127.0.0.1", 7000));
+            }
 
             // (1) IP 주소와 포트를 지정하고 TCP 연결 
             TcpClient tc = new TcpClient("127.0.0.1", 7000);

@@ -51,6 +51,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TCPCore\AsyncUserToken.cs" />
     <Compile Include="TCPCore\BufferManager.cs" />
+    <Compile Include="TCPCore\JhhException.cs" />
     <Compile Include="TCPCore\SingleT.cs" />
     <Compile Include="TCPCore\SocketAsyncEventArgsPool.cs" />
     <Compile Include="TCPPacket\PACKET_HADER.cs" />

@@ -34,6 +34,7 @@ namespace LoginServer
         }
         public void Init()
         {
+            Log.init("Console-Local");
             DBHelper.IsConnectCheck(EDBType.Login, add);
             UserRedis.SIG.init();
             m_LoginPro.Add(EPacketType.REQ_Login, UserLogin);
@@ -42,8 +43,9 @@ namespace LoginServer
             m_loginDB = new LoginDB();
             m_listener = new TcpListener(IPAddress.Any, 7000);
             m_listener.Start();
+            Log.Server($"Login Server Init complete Thread_{Thread.CurrentThread.ManagedThreadId}");
 
-            
+
         }
         #region[Login 델리게이트]
         public RES_Login UserLogin(REQ_Login _req)
@@ -51,11 +53,12 @@ namespace LoginServer
             RES_Login res = new RES_Login();
             UserLogin userinfo = null;
             res.AnswerType = DBHelper.UserLoginChecker(_req.user_id, _req.user_pass, out userinfo);
+
             switch (res.AnswerType)
             {
                 case EAnswerType.Fail_Invailed_Password:
-                    break;
                 case EAnswerType.Fail_NotFound_User:
+                    
                     break;
                 case EAnswerType.Success:
                     res.UserIdx = userinfo.user_idx;
@@ -71,6 +74,7 @@ namespace LoginServer
                     //이거 보내고 소캣연결 끊기.
                     break;
                 default:
+                    throw new JhhException(EAnswerType.Fail_InvailedPacket, "");
                     break;
             }
             return res;
@@ -99,7 +103,6 @@ namespace LoginServer
             {
                 res.AnswerType = EAnswerType.Fail_CreateUser;
             }
-
             return res;
         }
         #endregion
@@ -109,7 +112,7 @@ namespace LoginServer
             ThreadPool.QueueUserWorkItem(Accept);
             ThreadPool.QueueUserWorkItem(Regulator);
             //m_acceptThread.Start();
-            Console.WriteLine("Accpet Start...");
+            Log.Server($"Server Start Thread_{Thread.CurrentThread.ManagedThreadId}");
 
             bool isExit = false;
             while(!isExit)
@@ -142,6 +145,7 @@ namespace LoginServer
             {
                 TcpClient tc = m_listener.AcceptTcpClient();
                 AddUser(tc);
+                Log.Server($"ADD Connection UserSock:{tc.Client.Handle.ToString()} Thread_{Thread.CurrentThread.ManagedThreadId}");
                 //이런식으로 해도되는지...? 테스트해보자
                 //클라 두개만 켜두고 테스트는 완료함.
                 SetReceiveAsync(tc);
@@ -153,17 +157,19 @@ namespace LoginServer
             byte[] buff = new byte[1024];
             _client.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ =>
             {
-                Console.WriteLine("Recive Client handle: {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
+               Log.Server($"Recive Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId}");
 
                 var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
                 REQ_Login req = obj as REQ_Login;
                 RES_Login res = m_LoginPro[obj.PacketType](req);
 
+                Log.Write(Log.ELogType.Trace, $"{res.AnswerType.ToString()} User:{req.user_id} User input password:{req.user_pass}");
+
                 byte[] resBuff = JHHServerApi.Serialize<RES_Login>(res);
                 Console.WriteLine("BUFF: {0}", resBuff);
                 _client.Client.Send(resBuff);
                 Console.WriteLine("응답패킷 전송 완료 ==> {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
-
+                Log.Server($"Send Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId}");
                 if (res.AnswerType != EAnswerType.Success)
                     SetReceiveAsync(_client);
 
@@ -196,7 +202,7 @@ namespace LoginServer
                 }
                 break;
             }
-            Console.WriteLine("Delete complete");
+            Log.Server($"Delete Connection UserSock: {_tc.Client.Handle.ToString()}, Thread_{Thread.CurrentThread.ManagedThreadId} ");
         }
         /// <summary>
         /// m_DicClient를 관리하는 워커스레드.
@@ -215,15 +221,16 @@ namespace LoginServer
                         if (false == info.Value.Connected)
                         {
                             DeleteUser(info.Value);
+                            Log.Server($"Delete Connection UserSock: {info.Value.Client.Handle.ToString()}, Thread_{Thread.CurrentThread.ManagedThreadId} ");
                         }
                     }
                 }
                 Thread.Sleep(5000);
-                Console.Clear();
-                Console.WriteLine("Regulator...Thread_{0}",Thread.CurrentThread.ManagedThreadId);
-                Console.WriteLine("Total memory: {0:###,###,###,##0} bytes", GC.GetTotalMemory(true));
-                Console.WriteLine("Private bytes {0}", System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64);
-                Console.WriteLine("Handle count: {0}", System.Diagnostics.Process.GetCurrentProcess().HandleCount);
+                //Console.Clear();
+                //Console.WriteLine("Regulator...Thread_{0}",Thread.CurrentThread.ManagedThreadId);
+                //Console.WriteLine("Total memory: {0:###,###,###,##0} bytes", GC.GetTotalMemory(true));
+                //Console.WriteLine("Private bytes {0}", System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64);
+                //Console.WriteLine("Handle count: {0}", System.Diagnostics.Process.GetCurrentProcess().HandleCount);
             }
         }
     }
