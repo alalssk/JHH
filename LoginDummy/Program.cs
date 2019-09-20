@@ -142,7 +142,6 @@ namespace LoginDummy
             ThreadPool.QueueUserWorkItem(CreateUserSendTest);
             while(!StopFlag)
             {
-                Console.WriteLine("1. acceptThread stop or start");
                 Console.WriteLine("2. SendThread stop or start");
                 Console.WriteLine("3. all stop");
                 string key = Console.ReadLine();
@@ -219,7 +218,7 @@ namespace LoginDummy
                 info.Key.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ => 
                 {
                     RES_Login res = JHHServerApi.Deserialize<RES_Login>(buff);
-                    Log.Server($"Create User Compliete UserKey: {res.SessionKey}");
+                    Log.Server($"Create User Complete UserKey: {res.SessionKey}");
                 });
 
             }
@@ -252,6 +251,8 @@ namespace LoginDummy
         static void Main(string[] args)
         {
             DummyClient client = new DummyClient();
+            Console.WriteLine("any key press to start....");
+            Console.ReadLine();
             client.Init();
             client.Run();
         }

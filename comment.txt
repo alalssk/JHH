@@ -34,3 +34,8 @@ TcpListener.Pending()
                 Console.WriteLine("Handle count: {0}", System.Diagnostics.Process.GetCurrentProcess().HandleCount);
 DB 랑 레디스 인스턴스가 많이큰듯?
 얘들 Dispose 하고 언제쯤 GC가 얘뜰 지우는지도 확인해보자.
+
+
+0920 더미클라이언트 이슈
+- stop 와 start 한번씩 실행 후 다시 stop 할 시 동작안함.
+- stop안하고 바로 종료(3)할 시 서버에서 exception 발생.

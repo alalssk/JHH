@@ -155,27 +155,35 @@ namespace LoginServer
         private void SetReceiveAsync(TcpClient _client)
         {
             byte[] buff = new byte[1024];
-            _client.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ =>
+            try
             {
-               Log.Server($"Recive Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
+                _client.GetStream().ReadAsync(buff, 0, buff.Length).ContinueWith(_ =>
+                {
+                    Log.Server($"Recive Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
 
-                var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
-                REQ_Login req = obj as REQ_Login;
-                RES_Login res = m_LoginPro[obj.PacketType](req);
+                    var obj = JHHServerApi.Deserialize<PACKET_HADER>(buff);
+                    REQ_Login req = obj as REQ_Login;
+                    RES_Login res = m_LoginPro[obj.PacketType](req);
 
-                Log.Write(Log.ELogType.Trace, $"{res.AnswerType.ToString()} User:{req.user_id} User input password:{req.user_pass}");
+                    Log.Write(Log.ELogType.Trace, $"{res.AnswerType.ToString()} User:{req.user_id} User input password:{req.user_pass}");
 
-                byte[] resBuff = JHHServerApi.Serialize<RES_Login>(res);
-                Console.WriteLine("BUFF: {0}", resBuff);
-                _client.Client.Send(resBuff);
-                Console.WriteLine("응답패킷 전송 완료 ==> {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
-                Log.Server($"Send Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
-                if (res.AnswerType != EAnswerType.Success)
-                    SetReceiveAsync(_client);
+                    byte[] resBuff = JHHServerApi.Serialize<RES_Login>(res);
+                    Console.WriteLine("BUFF: {0}", resBuff);
+                    _client.Client.Send(resBuff);
+                    Console.WriteLine("응답패킷 전송 완료 ==> {0}, Thread_{1}", _client.Client.Handle, Thread.CurrentThread.ManagedThreadId);
+                    Log.Server($"Send Client handle: {_client.Client.Handle}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
+                    if (res.AnswerType != EAnswerType.Success)
+                        SetReceiveAsync(_client);
 
-                DeleteUser(_client);
-                
-            });
+                    DeleteUser(_client);
+
+                });
+
+            }
+            catch (Exception e)
+            {
+                Log.Write(Log.ELogType.Error, e.StackTrace);
+            }
         }
         private void AddUser(TcpClient _tc)
         {
@@ -221,12 +229,15 @@ namespace LoginServer
                         if (false == info.Value.Connected)
                         {
                             DeleteUser(info.Value);
-                            Log.Server($"Delete Connection UserSock: {info.Value.Client.Handle.ToString()}, Thread_{Thread.CurrentThread.ManagedThreadId} Total User Count: {m_DicClient.Count}");
                         }
                     }
                 }
                 Thread.Sleep(5000);
                 //Console.Clear();
+                Log.Server($"Regulator Total memory: {GC.GetTotalMemory(true)}");
+                Log.Server($"Reulator Private bytes {System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64}");
+                Log.Server($"Handle count {System.Diagnostics.Process.GetCurrentProcess().HandleCount}");
+
                 //Console.WriteLine("Regulator...Thread_{0}",Thread.CurrentThread.ManagedThreadId);
                 //Console.WriteLine("Total memory: {0:###,###,###,##0} bytes", GC.GetTotalMemory(true));
                 //Console.WriteLine("Private bytes {0}", System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64);
